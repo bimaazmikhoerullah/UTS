@@ -8,24 +8,21 @@ return [
     |--------------------------------------------------------------------------
     |
     | Laravel's queue supports a variety of backends via a single, unified
-    | API, giving you convenient access to each backend using identical
-    | syntax for each. The default queue connection is defined below.
+    | API, giving you convenient access to each backend via an identical
+    | API for each. The default queue connection is defined below.
     |
     */
 
-    'default' => env('QUEUE_CONNECTION', 'database'),
+    'default' => env('QUEUE_CONNECTION', 'sync'),
 
     /*
     |--------------------------------------------------------------------------
     | Queue Connections
     |--------------------------------------------------------------------------
     |
-    | Here you may configure the connection options for every queue backend
+    | Here you may configure the connection options for each queue backend
     | used by your application. An example configuration is provided for
-    | each backend supported by Laravel. You're also free to add more.
-    |
-    | Drivers: "sync", "database", "beanstalkd", "sqs", "redis",
-    |          "deferred", "background", "failover", "null"
+    | each of the Laravel-supported drivers.
     |
     */
 
@@ -73,6 +70,24 @@ return [
             'after_commit' => false,
         ],
 
+        'rabbitmq' => [
+            'driver' => 'rabbitmq',
+            'hosts' => [
+                [
+                    'host' => env('RABBITMQ_HOST', '127.0.0.1'),
+                    'port' => (int) env('RABBITMQ_PORT', 5672),
+                    'vhost' => env('RABBITMQ_VHOST', '/'),
+                    'user' => env('RABBITMQ_USER', env('RABBITMQ_LOGIN', 'guest')),
+                    'password' => env('RABBITMQ_PASSWORD', 'guest'),
+                ],
+            ],
+            'queue' => env('RABBITMQ_QUEUE', 'default'),
+            'exchange' => env('RABBITMQ_EXCHANGE', ''),
+            'routing_key' => env('RABBITMQ_ROUTING_KEY', 'default'),
+            'retry_after' => (int) env('RABBITMQ_RETRY_AFTER', 90),
+            'after_commit' => false,
+        ],
+
         'deferred' => [
             'driver' => 'deferred',
         ],
@@ -115,8 +130,6 @@ return [
     | These options configure the behavior of failed queue job logging so you
     | can control how and where failed jobs are stored. Laravel ships with
     | support for storing failed jobs in a simple file or in a database.
-    |
-    | Supported drivers: "database-uuids", "dynamodb", "file", "null"
     |
     */
 

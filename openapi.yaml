@@ -1,0 +1,220 @@
+openapi: 3.0.0
+info:
+  title: Layanan Katalog dan Stok Toko Berkah Jaya
+  version: 1.0.0
+  description: API untuk mengelola katalog produk dan stok Toko Berkah Jaya
+  contact:
+    name: Kelompok Proyek Akhir
+    email: kelompok@example.com
+tags:
+  - name: produk
+    description: Operasi terkait katalog produk dan stok
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Local server
+paths:
+  /produk:
+    get:
+      summary: Daftar produk
+      description: Mengembalikan daftar seluruh produk yang terdaftar di katalog.
+      tags:
+        - produk
+      operationId: listProduk
+      responses:
+        '200':
+          description: Successful response with array of products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      summary: Tambah produk
+      description: Menambahkan produk baru ke katalog dengan SKU unik, nama, harga, dan stok awal.
+      tags:
+        - produk
+      operationId: createProduk
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductInput'
+      responses:
+        '201':
+          description: Product created
+          headers:
+            Location:
+              description: URL of the newly created product
+              schema:
+                type: string
+                format: uri
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /produk/{sku}:
+    get:
+      summary: Detail produk
+      description: Mengambil detail satu produk berdasarkan SKU.
+      tags:
+        - produk
+      operationId: getProdukBySKU
+      parameters:
+        - name: sku
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response with product details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      summary: Sesuaikan stok
+      description: Menyesuaikan stok produk (positif menambah, negatif mengurangi). Stok tidak boleh jadi negatif.
+      tags:
+        - produk
+      operationId: adjustStock
+      parameters:
+        - name: sku
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StockAdjustment'
+      responses:
+        '200':
+          description: Stok berhasil disesuaikan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict (e.g., stock would go negative)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+components:
+  schemas:
+    Product:
+      type: object
+      required:
+        - sku
+        - name
+        - stock
+      properties:
+        sku:
+          type: string
+          description: Stock Keeping Unit, unique identifier for the product
+        name:
+          type: string
+          description: Nama produk
+        stock:
+          type: integer
+          description: Jumlah stok saat ini
+          minimum: 0
+    ProductInput:
+      type: object
+      required:
+        - sku
+        - name
+        - stock
+      properties:
+        sku:
+          type: string
+          description: Stock Keeping Unit, unique identifier for the product
+        name:
+          type: string
+          description: Nama produk
+        stock:
+          type: integer
+          description: Jumlah stok awal
+          minimum: 0
+    StockAdjustment:
+      type: object
+      required:
+        - quantity
+      properties:
+        quantity:
+          type: integer
+          description: Jumlah penyesuaian stok (positif untuk penambahan, negatif untuk pengurangan)
+    ErrorResponse:
+      type: object
+      properties:
+        type:
+          type: string
+          description: URI yang mengidentifikasi jenis masalah
+        title:
+          type: string
+          description: Ringkasan singkat tentang masalah
+        status:
+          type: integer
+          description: Kode status HTTP yang dihasilkan oleh server
+        detail:
+          type: string
+          description: Penjelasan spesifik tentang masalah
+        instance:
+          type: string
+          description: URI yang mengidentifikasi kemunculan spesifik dari masalah
+  responses:
+    Unauthorized:
+      description: Token akses tidak valid atau tidak disertakan
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Akses ditolak karena tidak memiliki izin yang cukup
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    BadRequest:
+      description: Permintaan tidak dapat dipahami oleh server karena sintaks yang tidak valid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ValidationError:
+      description: Kesalahan validasi input
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
