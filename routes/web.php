@@ -1,14 +1,26 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Teams\TeamInvitationController;
+use App\Http\Middleware\EnsureTeamMembership;
 use Illuminate\Support\Facades\Route;
 
-use App\Http\Controllers\Web\ProdukWebController;
+Route::get('/', function () {
+    $products = \App\Models\Product::orderBy('name')->get();
+    return inertia('welcome', [
+        'products' => $products,
+    ]);
+})->name('home');
 
-Route::get('/', [ProdukWebController::class, 'dashboard'])->name('home');
-Route::get('/produk', [ProdukWebController::class, 'index'])->name('produk.index');
-Route::get('/produk/{sku}', [ProdukWebController::class, 'show'])->name('produk.show');
+Route::prefix('{current_team}')
+    ->middleware(['auth', 'verified', EnsureTeamMembership::class])
+    ->group(function () {
+        Route::get('dashboard', DashboardController::class)->name('dashboard');
+    });
 
-// Inertia form POST: tambah produk & penyesuaian stok (redirect back ke halaman web)
-use App\Http\Controllers\Web\ProdukFormController;
-Route::post('/produk', [ProdukFormController::class, 'store'])->name('produk.store');
-Route::post('/produk/{sku}/stok', [ProdukFormController::class, 'adjustStock'])->name('produk.stok');
+Route::middleware(['auth'])->group(function () {
+    Route::post('invitations/{invitation}/accept', [TeamInvitationController::class, 'accept'])->name('invitations.accept');
+    Route::delete('invitations/{invitation}', [TeamInvitationController::class, 'decline'])->name('invitations.decline');
+});
+
+require __DIR__.'/settings.php';

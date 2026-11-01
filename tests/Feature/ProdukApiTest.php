@@ -66,7 +66,20 @@ class ProdukApiTest extends TestCase
     {
         $response = $this->getJson('/api/v1/produk/NONEXISTENT');
 
-        $response->assertStatus(404);
+        $response->assertStatus(404)
+                 ->assertHeader('Content-Type', 'application/problem+json')
+                 ->assertJsonStructure([
+                     'type',
+                     'title',
+                     'status',
+                     'detail',
+                     'instance',
+                 ])
+                 ->assertJsonFragment([
+                     'type' => 'about:blank',
+                     'title' => 'Product Not Found',
+                     'status' => 404,
+                 ]);
     }
 
     public function test_it_can_adjust_stock()
@@ -108,7 +121,13 @@ class ProdukApiTest extends TestCase
         $adjustment = ['quantity' => 5];
         $response = $this->postJson('/api/v1/produk/NONEXISTENT/penyesuaian-stok', $adjustment);
 
-        $response->assertStatus(404);
+        $response->assertStatus(404)
+                 ->assertHeader('Content-Type', 'application/problem+json')
+                 ->assertJsonFragment([
+                     'type' => 'about:blank',
+                     'title' => 'Product Not Found',
+                     'status' => 404,
+                 ]);
     }
 
     public function test_it_returns_409_when_stock_would_go_negative()
@@ -126,22 +145,46 @@ class ProdukApiTest extends TestCase
         $adjustment = ['quantity' => -10];
         $response = $this->postJson('/api/v1/produk/TEST004/penyesuaian-stok', $adjustment);
 
-        $response->assertStatus(409);
+        $response->assertStatus(409)
+                 ->assertHeader('Content-Type', 'application/problem+json')
+                 ->assertJsonStructure([
+                     'type',
+                     'title',
+                     'status',
+                     'detail',
+                     'instance',
+                 ])
+                 ->assertJsonFragment([
+                     'type' => 'about:blank',
+                     'title' => 'Conflict',
+                     'status' => 409,
+                 ]);
     }
 
     public function test_it_validates_input_when_creating_product()
     {
         // Missing required fields
         $response = $this->postJson('/api/v1/produk', []);
-        $response->assertStatus(422);
+        $response->assertStatus(422)
+                 ->assertHeader('Content-Type', 'application/problem+json')
+                 ->assertJsonStructure([
+                     'type',
+                     'title',
+                     'status',
+                     'detail',
+                     'instance',
+                     'invalid_params',
+                 ]);
 
         // Invalid stock (negative)
         $response = $this->postJson('/api/v1/produk', [
             'sku' => 'TEST005',
             'name' => 'Produk Test 5',
+            'harga' => 10000,
             'stock' => -1
         ]);
-        $response->assertStatus(422);
+        $response->assertStatus(422)
+                 ->assertHeader('Content-Type', 'application/problem+json');
     }
 
     public function test_it_validates_input_when_adjusting_stock()
@@ -157,11 +200,20 @@ class ProdukApiTest extends TestCase
 
         // Missing quantity
         $response = $this->postJson('/api/v1/produk/TEST006/penyesuaian-stok', []);
-        $response->assertStatus(422);
+        $response->assertStatus(422)
+                 ->assertHeader('Content-Type', 'application/problem+json')
+                 ->assertJsonStructure([
+                     'type',
+                     'title',
+                     'status',
+                     'detail',
+                     'instance',
+                 ]);
 
         // Quantity not an integer
         $response = $this->postJson('/api/v1/produk/TEST006/penyesuaian-stok', ['quantity' => 'abc']);
-        $response->assertStatus(422);
+        $response->assertStatus(422)
+                 ->assertHeader('Content-Type', 'application/problem+json');
     }
 
     public function test_api_v1_root_returns_metadata()

@@ -1,56 +1,56 @@
 # Dokumen Analisis Integrasi — Proyek Akhir
 **Mata Kuliah: Integrasi Sistem dan Komputasi Awan (25IF1504)**
-**Kelompok: [NAMA KELOMPOK] — Anggota: [Anggota 1], [Anggota 2], [Anggota 3]**
+**Kelompok: Warung Kelontong Pak Hendy — Anggota: Difki Junaedi (3224005), Bima Azmi Khoerullah (3224017), Nurul Hidayah (3224002)**
 
 ---
 
 ## 1. Konteks Mitra
 
 ### 1.1 Organisasi
-Mitra yang kami ambil sebagai kasus analisis adalah **Toko Berkah Jaya**, sebuah pengecer produk kerudung (kerudung paris, jilbab, aksesori) di Bandung dengan volume penjualan ritel harian sekitar ratusan transaksi. Skala bisnisnya masih kecil-menengah: satu outlet fisik, satu pemilik-operator yang mengurusi jual-beli sekaligus pencatatan, dan satu sistem pembukuan sederhana.
+Mitra yang kami ambil sebagai kasus analisis adalah **Warung Kelontong Pak Hendy**, sebuah toko kelontong ritel yang menjual kebutuhan pokok dan sembako (beras, minyak goreng, gula pasir, tepung terigu, mie instan, telur, sabun, dan aneka perlengkapan rumah tangga) yang melayani kebutuhan warga perumahan/sekitar. Skala bisnisnya merupakan usaha mikro-kecil: satu gerai toko fisik, dikelola langsung oleh Pak Hendy bersama seorang pramuniaga/kasir untuk mengurusi penerimaan pasokan barang dari agen distributor, transaksi jual-beli harian dengan pelanggan, serta pencatatan keuangan warung.
 
 ### 1.2 Proses Bisnis yang Disentuh
-Proses inti yang kami fokuskan: **siklus stok** — dari penyesuaian stok (restok dari supplier, penjualan ke konsumen) hingga pencatatan perubahan tersebut di pembukuan. Saat ini proses ini berjalan manual:
+Proses inti yang kami fokuskan adalah **siklus perputaran stok dan persediaan barang kelontong** — mulai dari penyesuaian stok saat kulakan/restok dari agen distributor, mutasi stok saat terjadi transaksi penjualan ke pelanggan di kasir, hingga pencatatan perubahan nilai barang tersebut ke dalam pembukuan kas warung. Saat ini proses tersebut memiliki sejumlah kendala:
 
-1. Ada restok → operator menambah stok secara manual di catatan.
-2. Ada penjualan → operator mengurangi stok secara manual.
-3. Perubahan stok itu **tidak** otomatis tercatat di pembukuan (cashbook/pencatatan keuangan), sehingga owner harus menyalin ulang angka dari catatan stok ke catatan keuangan secara berkala (biasanya mingguan).
+1. **Restok / Kulakan:** Saat barang sembako tiba dari distributor (misal: 20 karton minyak goreng atau 10 karung beras), penambahan stok dicatat di buku stok fisik warung.
+2. **Penjualan Eceran:** Kasir melayani pembeli secara cepat, namun pengurangan stok produk sering kali baru direkap di akhir hari atau saat stok di rak display sudah kosong.
+3. **Pencatatan Keuangan Terpisah:** Perubahan stok tidak langsung terhubung dengan catatan keuangan warung (cashbook harian). Pak Hendy harus menyalin ulang faktur pembelian dan rekap penjualan secara manual setiap akhir pekan untuk mengetahui keuntungan kotor dan sisa persediaan.
 
 ### 1.3 Sistem yang Sudah Ada
-- **Sistem kasir (point-of-sale)** — mencatat penjualan, berbasis desktop/web milik toko.
-- **Sistem pembukuan/keuangan** — spreadsheet (Excel/Google Sheet) yang dikelola owner untuk mencatat omzet, biaya, dan arus kas.
-- **Catatan stok** — saat ini masih manual (buku/Excel), belum berupa layanan terpusat.
+- **Sistem Kasir (Point of Sale):** Aplikasi kasir sederhana berbasis web/desktop untuk menghitung total belanjaan dan mencetak struk belanja pembeli.
+- **Sistem Pembukuan / Keuangan:** Spreadsheet (Excel / Google Sheets) yang dikelola oleh Pak Hendy untuk mencatat arus kas masuk, pengeluaran kulakan, dan estimasi keuntungan bulanan.
+- **Pencatatan Persediaan (Stok):** Selama ini masih menggunakan catatan manual/kartu stok di rak gudang, belum berupa layanan terpusat yang dapat diakses otomatis oleh sistem kasir.
 
 ---
 
 ## 2. Persoalan Integrasi
 
-Data stok tersebar di tiga tempat yang berbeda dan **tidak pernah sinkron otomatis**:
+Data persediaan barang dan keuangan warung tersebar di beberapa tempat terpisah dan **tidak pernah tersinkronisasi secara otomatis**:
 
-| Data | Lokasi saat ini | Siapa yang terdampak |
+| Data | Lokasi saat ini | Pihak yang Terdampak |
 |---|---|---|
-| Stok produk | Catatan manual / spreadsheet | Operator kasir, owner |
-| Riwayat penjualan | Sistem kasir | Owner (untuk rekap) |
-| Pencatatan keuangan | Spreadsheet pembukuan | Owner (untuk laporan laba rugi) |
+| Stok barang sembako | Catatan manual / buku gudang | Kasir, Pak Hendy (owner) |
+| Riwayat transaksi kasir | Sistem kasir (POS) | Kasir, Pembeli |
+| Arus kas & nilai inventori | Spreadsheet pembukuan | Pak Hendy (owner) |
 
-**Akibatnya:**
-- Stok fisik dan angka di pembukuan bisa beda jauh, owner baru sadar selisihnya saat tutup buku mingguan.
-- Operator kasir tidak tahu apakah stok masih cukup untuk dijual tanpa cek manual.
-- Tidak ada jejak *audit*: kalau stok berkurang, tidak jelas penyebabnya (penjualan? restok mundur? selisih?).
+**Dampak dari persoalan ini:**
+- **Selisih Stok:** Angka barang yang tercatat sering berbeda dengan fisik barang yang ada di rak, mengakibatkan kasir menerima transaksi produk yang fisiknya sebenarnya sudah habis terjual.
+- **Keterlambatan Restok:** Pak Hendy baru menyadari barang habis saat pembeli menanyakan produk, karena tidak ada sistem penyesuaian stok seketika (*real-time inventory*).
+- **Ketiadaan Jejak Audit:** Jika terjadi kehilangan atau kerusakan barang kelontong (misal botol minyak bocor atau bungkus mie rusak), tidak ada riwayat pencatatan alasan penyesuaian stok yang terhubung ke laporan kerugian di pembukuan.
 
-Dengan kata lain, data terfragmentasi menjadi **silo** di setiap sistem/catatan, dan tidak ada satu sumber kebenaran (single source of truth) untuk stok.
+Dengan demikian, sistem mengalami fragmentasi data (**silo**) tanpa adanya satu sumber kebenaran tunggal (*single source of truth*) untuk stok barang.
 
 ---
 
-## 3. Pendekatan & Gaya Integrasi (pengembangan dari Tugas 3)
+## 3. Pendekatan & Gaya Integrasi (Pengembangan dari Tugas 3)
 
-| Pasangan Sistem | Gaya Integrasi | Alasan / Trade-off |
+| Pasangan Sistem | Gaya Integrasi | Alasan Pemilihan & Trade-off |
 |---|---|---|
-| **Layanan Stok ↔ Sistem Kasir** | **Sinkron (REST)** | Kasir butuh tahu stok *real-time* untuk memvalidasi penjualan saat transaksi berjalan. Trade-off: layanan stok harus selalu siap dan latensi rendah; kalau down, kasir terdampak langsung. |
-| **Layanan Stok ↔ Layanan Pembukuan** | **Asinkron (event via message broker)** | Pembukuan tidak butuh tahu stok detik itu juga — cukup tahu *perubahan* yang sudah terjadi, dan boleh diproses belakangan. Trade-off: ada *eventual consistency* (pembukuan bisa tertinggal beberapa detik dari stok), tapi sistem pembukuan tidak akan pernah menjadi titik kegagalan bagi transaksi penjualan. |
-| **Layanan Stok ↔ UI Admin (frontend Inertia/React)** | **Sinkron (REST)** | UI hanya tampilan CRUD/monitoring, tidak masalah kalau ada jeda kecil. |
+| **Layanan Stok ↔ Sistem Kasir** | **Sinkron (RESTful API)** | Kasir membutuhkan konfirmasi ketersediaan stok secara seketika (*real-time*) sebelum mengonfirmasi pembayaran pembeli agar tidak terjadi penjualan barang kosong. **Trade-off:** Layanan stok harus memiliki latensi rendah dan ketersediaan tinggi; jika layanan stok mengalami kendala, transaksi kasir terhambat. |
+| **Layanan Stok ↔ Layanan Pembukuan** | **Asinkron (Event-Driven via RabbitMQ)** | Layanan pembukuan keuangan warung tidak perlu memblokir transaksi pembeli di kasir. Yang dibutuhkan adalah kabar bahwa perubahan stok telah terjadi (*event*). Perhitungan laba rugi dan valuasi persediaan dapat diproses beberapa detik kemudian (*eventual consistency*). **Trade-off:** Konsistensi data bersifat *eventual*, namun kegagalan pada layanan pembukuan tidak akan pernah menggagalkan transaksi penjualan di kasir. |
+| **Layanan Stok ↔ Web UI Admin (Inertia/React)** | **Sinkron (RESTful API)** | UI manajemen stok digunakan oleh Pak Hendy untuk memantau status produk, melihat peringatan stok habis, dan melakukan restok barang secara visual. |
 
-Pola ini sesuai hasil Tugas 3: **sinkron untuk kebutuhan konsistensi real-time (kasir), asinkron untuk kebutuhan "kirim kabar setelah terjadi" (pembukuan)**, memakai *outbox pattern* supaya event dan mutasi data stok tidak terpisah.
+Pola arsitektur ini menerapkan **Outbox Pattern**: penyesuaian data stok pada basis data dan pencatatan event perubahan dibungkus dalam **satu transaksi database ACID**, sehingga tidak akan terjadi kondisi data stok berubah tetapi event gagal diterbitkan (*dual-write problem*).
 
 ---
 
@@ -59,68 +59,66 @@ Pola ini sesuai hasil Tugas 3: **sinkron untuk kebutuhan konsistensi real-time (
 ```
 ┌─────────────────────────┐          ┌──────────────────────────┐
 │   Sistem Kasir (POS)     │──REST──▶│  Layanan Stok & Katalog  │
-│   (sistem mitra yang ada)│          │  (Layanan 1 — dibangun   │
+│ (Aplikasi Kasir Warung)  │          │  (Layanan 1 — dibangun   │
 └─────────────────────────┘          │   di proyek ini, Laravel)│
                                      └───────────┬──────────────┘
-                                                │ 1) tulis data stok
-                                                │ 2) tulis outbox (meski event)
-                                                │ 3) commit transaksi DB
+                                                │ 1) Update tabel products
+                                                │ 2) Catat baris tabel outbox
+                                                │ 3) Commit transaksi DB (ACID)
                                                 │
                                                 ▼
                                      ┌──────────────────────────┐
-                                     │   RabbitMQ (message      │
-                                     │   broker) — exchange     │
-                                     │   "toko.events" (topic)  │
+                                     │   RabbitMQ (Message      │
+                                     │   Broker) — Topic        │
+                                     │   Exchange "toko.events" │
                                      └───────────┬──────────────┘
-                                                │ consume
+                                                │ Consume event
                                                 ▼
                                      ┌──────────────────────────┐
                                      │  Layanan Pembukuan       │
-                                     │  (Layanan 2 — menerima    │
-                                     │  event StokDisesuaikan)   │
+                                     │  (Layanan 2 — pencatat    │
+                                     │   mutasi kas & inventori)│
                                      └──────────────────────────┘
 
    ┌─────────────────────────┐
-   │ UI Admin (Inertia/React)│──REST──▶  Layanan Stok & Katalog (tambahan, bukan jalur utama)
+   │ Web UI Admin (React)    │──REST──▶  Layanan Stok & Katalog (monitoring stok Pak Hendy)
    └─────────────────────────┘
 ```
 
-> Catatan: untuk checkpoint ini, **Layanan Pembukuan cukup disimulasikan** sebagai consumer yang memverifikasi event masuk ke RabbitMQ (bisa berupa listener sederhana yang log/terima pesan di RabbitMQ Management UI), karena fokusnya membuktikan **jalur asinkron benar-benar lewat broker**, bukan membangun sistem pembukuan utuh.
+> **Catatan:** Pada Checkpoint 1 ini, **Layanan Pembukuan disimulasikan** sebagai consumer yang memverifikasi pesan event masuk ke antrean RabbitMQ (dapat diverifikasi melalui RabbitMQ Management UI pada `http://localhost:15672`), untuk membuktikan bahwa jalur asinkron bekerja secara handal melalui broker.
 
 ### Batas Tanggung Jawab Tiap Layanan
-1. **Layanan Stok & Katalog** (yang dibangun, Laravel + PHP):
-   - Menangani CRUD produk, penyesuaian stok (sinkron dengan kasir via REST).
-   - Menerbitkan event `StokDisesuaikan` ke RabbitMQ via outbox (asinkron ke pembukuan).
-   - Tanggung jawab tunggal: *sumber kebenaran stok* + *mencatat event perubahan*.
-2. **Layanan Pembukuan (konsumen)**:
-   - Mengonsumsi event `StokDisesuaikan` dari RabbitMQ.
-   - Mencatat perubahan ke pembukuan (penjualan = pendapatan, restok = biaya/penambahan aset).
-   - Tanggung jawab tunggal: *mencatat transaksi keuangan dari perubahan stok*.
-3. **UI Admin (opsional, sudah ada sebagai lapisan Inertia/React di repo)**:
-   - Tampilan daftar produk, form penyesuaian stok.
-   - Tidak menyimpan data sendiri, hanya meneruskan ke REST.
+1. **Layanan Stok & Katalog (Layanan 1 — Laravel + MySQL):**
+   - Mengelola katalog produk kelontong (SKU, nama, harga, stok).
+   - Menjalankan penyesuaian stok secara sinkron (tambah/kurang) dengan validasi stok non-negatif.
+   - Bertanggung jawab sebagai *single source of truth* data inventori dan mencatat event ke tabel `outbox`.
+   - Mengirim event pesan ke RabbitMQ via `RabbitPublisher`.
+2. **Layanan Pembukuan (Layanan 2 — Consumer):**
+   - Mengonsumsi event `StokDisesuaikan` dari RabbitMQ berdasarkan routing key `stok.{alasan}`.
+   - Mengonversi data mutasi barang menjadi catatan finansial (penjualan = penerimaan kas, restok = pengeluaran modal).
+3. **Web UI Admin (Inertia + React):**
+   - Dashboard monitoring stok bagi Pak Hendy: menampilkan total produk, barang hampir habis, dan form penyesuaian stok cepat.
 
-### Jalur Sinkron (REST)
-- `GET/POST /api/v1/produk` — daftar/tambah produk.
-- `GET /api/v1/produk/{sku}` — detail produk.
-- `POST /api/v1/produk/{sku}/penyesuaian-stok` — ubah stok (dipakai kasir/UI).
+### Jalur Sinkron (REST API)
+- `GET /api/v1/produk` : Menampilkan seluruh daftar produk sembako/kelontong.
+- `POST /api/v1/produk` : Mendaftarkan produk kelontong baru dengan SKU unik, harga, dan stok awal.
+- `GET /api/v1/produk/{sku}` : Mengambil informasi detail produk berdasarkan kode SKU.
+- `POST /api/v1/produk/{sku}/penyesuaian-stok` : Memutasi jumlah stok secara sinkron (menolak mutasi jika stok akhir negatif dengan status `409 Conflict`).
 
-### Jalur Asinkron (Event via Message Broker)
-- Event: **StokDisesuaikan**
-- Exchange: **`toko.events`** (topology: topic, durable)
-- Routing key: **`stok.{alasan}`** (mis. `stok.penjualan`, `stok.restok`)
-- Field payload: `sku`, `perubahan`, `alasan`, `stok_sesudah`, `harga`, `terjadi_pada`
-- Penerbit: Layanan Stok & Katalog (via outbox pattern + `RabbitPublisher`)
-- Penerima: Layanan Pembukuan
+### Jalur Asinkron (Event via RabbitMQ)
+- **Nama Event:** `StokDisesuaikan`
+- **Exchange:** `toko.events` (Topic, Durable)
+- **Routing Key:** `stok.{alasan}` (contoh: `stok.penjualan`, `stok.restok`, `stok.koreksi`)
+- **Field Payload:** `sku`, `perubahan`, `alasan`, `stok_sesudah`, `harga`, `terjadi_pada`
+- **Penerbit:** Layanan Stok & Katalog via Outbox Pattern
+- **Penerima:** Layanan Pembukuan / Keuangan
 
 ---
 
-## Daftar Anggota & Pembagian Tugas
+## 5. Daftar Anggota & Pembagian Tugas
 
-| Anggota | Bagian yang dikerjakan |
-|---|---|
-| [Nama 1] | Desain arsitektur + Layanan Stok (REST controller, model, outbox) |
-| [Nama 2] | Implementasi event & RabbitMQ (publisher, exchange, routing key) |
-| [Nama 3] | Feature test (API + outbox) + Dokumentasi (README, openapi.yaml) |
-
-*(Ganti nama di atas dengan nama anggota kelompok kalian sebelum dikumpulkan.)*
+| Nama | NIM | Bagian yang Dikerjakan |
+|---|---|---|
+| **Difki Junaedi** | 3224005 | Desain arsitektur + Layanan Stok (REST controller, model, validasi, integrasi transaksi DB & outbox) |
+| **Bima Azmi Khoerullah** | 3224017 | Implementasi event & RabbitMQ (publisher, exchange topic, konfigurasi routing key) |
+| **Nurul Hidayah** | 3224002 | Feature test (API & outbox) + Dokumentasi (OpenAPI Spectral, README, dokumen analisis) |

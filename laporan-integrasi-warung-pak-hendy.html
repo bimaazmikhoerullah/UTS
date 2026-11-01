@@ -1,0 +1,227 @@
+<title>Integrasi Warung Pak Hendy</title>
+<meta name="description" content="Naskah analisis arsitektur integrasi kasir, inventaris, dan pemesanan pemasok untuk Proyek Akhir Kelompok 67." />
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+:root {
+  /* Layout: editorial report with a narrow reading measure, technical side notes, and restrained market-ledger accents. */
+  --bg: #f5f3ed; --surface: #fffefa; --fg: #202c2a; --muted: #586763; --line: #cbd3cc;
+  --accent: #176b59; --accent-soft: #e5f1eb; --warning: #895321; --warning-soft: #f5eadb;
+  --display: "Source Serif 4", Georgia, serif; --body: "IBM Plex Sans", Arial, sans-serif; --mono: "IBM Plex Mono", "Courier New", monospace;
+  --shadow: 0 10px 32px rgba(30, 54, 46, .07);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#17201e; --surface:#202b28; --fg:#edf2ee; --muted:#b0beb7; --line:#43534d; --accent:#83c8a8; --accent-soft:#273e35; --warning:#e6b875; --warning-soft:#413529; --shadow:0 10px 32px rgba(0,0,0,.2); color-scheme:dark; } }
+:root[data-theme="dark"] { --bg:#17201e; --surface:#202b28; --fg:#edf2ee; --muted:#b0beb7; --line:#43534d; --accent:#83c8a8; --accent-soft:#273e35; --warning:#e6b875; --warning-soft:#413529; --shadow:0 10px 32px rgba(0,0,0,.2); color-scheme:dark; }
+body { margin:0; padding-block:32px 64px; padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); background:var(--bg); color:var(--fg); font: 16px/1.68 var(--body); }
+* { box-sizing:border-box; } a { color:var(--accent); } .page { max-width:920px; margin:0 auto; }
+header.hero { padding:clamp(26px,6vw,58px); background:var(--surface); border-top:5px solid var(--accent); box-shadow:var(--shadow); }
+.eyebrow, .label { color:var(--accent); font:600 .75rem/1.3 var(--mono); letter-spacing:.09em; text-transform:uppercase; }
+h1,h2,h3,h4 { font-family:var(--display); line-height:1.18; text-wrap:balance; }
+h1 { font-size:clamp(2.3rem,6vw,4.2rem); letter-spacing:-.035em; max-width:13ch; margin:.35em 0; }
+.subtitle { color:var(--muted); font-size:1.08rem; max-width:64ch; }
+.meta { display:flex; flex-wrap:wrap; gap:8px 24px; border-top:1px solid var(--line); padding-top:18px; margin-top:28px; color:var(--muted); font-size:.9rem; }
+main { max-width:760px; margin:42px auto 0; }
+section { margin:0 0 42px; }
+h2 { font-size:clamp(1.75rem,4vw,2.35rem); margin:0 0 18px; padding-bottom:12px; border-bottom:1px solid var(--line); }
+h3 { font-size:1.38rem; margin:26px 0 10px; }
+h4 { font-size:1.1rem; margin:20px 0 8px; }
+p { margin:0 0 14px; max-width:70ch; } ul,ol { padding-left:1.35rem; margin:0 0 16px; } li { margin:0 0 6px; }
+.callout { background:var(--accent-soft); border-left:3px solid var(--accent); padding:16px 18px; margin:20px 0; }
+.caution { background:var(--warning-soft); border-left:3px solid var(--warning); padding:15px 18px; margin:18px 0; }
+.callout p:last-child,.caution p:last-child { margin-bottom:0; }
+.table-wrap,.diagram-wrap,.code-wrap { overflow-x:auto; max-width:100%; margin:18px 0 24px; }
+table { border-collapse:collapse; width:100%; font-size:.91rem; }
+th,td { padding:10px 12px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+th { background:var(--accent-soft); font-weight:650; }
+td { min-width:100px; }
+pre { margin:0; padding:18px; background:var(--surface); border:1px solid var(--line); color:var(--fg); font: .82rem/1.55 var(--mono); white-space:pre; }
+code { font-family:var(--mono); font-size:.9em; overflow-wrap:anywhere; }
+.inline-code { background:var(--accent-soft); padding:.12em .35em; }
+.kicker { color:var(--muted); font-size:.88rem; }
+figure { margin:20px 0; } figcaption { margin-top:8px; color:var(--muted); font-size:.85rem; }
+small { color:var(--muted); }
+.timeline { border-left:2px solid var(--line); padding-left:20px; }
+.timeline article { position:relative; margin-bottom:18px; }
+.timeline article::before { content:""; position:absolute; left:-26px; top:.48em; width:10px; height:10px; border-radius:50%; background:var(--accent); }
+footer { max-width:760px; margin:50px auto 0; padding-top:20px; border-top:1px solid var(--line); color:var(--muted); font-size:.87rem; }
+@media (max-width:560px) { body{padding-block:16px 40px} .meta{gap:8px 14px} th,td{padding:8px 9px} }
+@media print { :root { --bg:#fff; --surface:#fff; --fg:#111; --muted:#444; --line:#aaa; --accent:#176b59; --accent-soft:#edf4ef; --warning:#754614; --warning-soft:#f8f0e5; color-scheme:light; } body{padding:0;font-size:10.5pt} .page{max-width:none} header.hero{box-shadow:none;padding:22px 28px} main,footer{max-width:none} section{break-inside:avoid} h2,h3{break-after:avoid} table,pre{break-inside:avoid} }
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:wght@500;600;700&display=swap">
+<div class="page">
+<header class="hero">
+  <div class="eyebrow">Proyek Akhir · Integrasi Sistem dan Komputasi Awan</div>
+  <h1>Kasir terhubung, stok terkendali</h1>
+  <p class="subtitle">Analisis arsitektur integrasi untuk ekosistem kasir digital dan otomasi rantai pasok Warung Kelontong Pak Hendy.</p>
+  <div class="meta"><span><strong>Mitra:</strong> Warung Kelontong Pak Hendy</span><span><strong>Kelompok 67:</strong> Difki Junaedi · Nurul Hidayah · Bima Azmi Khoerullah</span><span><strong>Kurikulum:</strong> STMIK Bandung, 2025</span></div>
+</header>
+<main>
+<section>
+<div class="label">Ringkasan eksekutif</div>
+<p>Warung Pak Hendy memerlukan alur data yang menyatukan transaksi kasir, saldo persediaan, dan pemesanan ulang kepada agen grosir. Ketiganya memiliki kebutuhan waktu dan tingkat keandalan yang berbeda. Karena itu, rancangan ini memilih REST API sinkron untuk konfirmasi penjualan dan pengurangan stok, lalu menggunakan RabbitMQ untuk menyampaikan peristiwa ambang stok kepada layanan pemesanan pemasok secara asinkron.</p>
+<p>Inventory Backend berbasis Laravel dan MySQL menjadi <em>single source of truth</em> untuk katalog, saldo stok, serta mutasi. Pengurangan stok dijalankan dalam transaksi ACID dengan penguncian baris. Pola transactional outbox menghubungkan komit basis data dengan publikasi pesan. Consumer pemasok memproses pesan secara idempoten menggunakan <code class="inline-code">event_id</code> sehingga pengiriman ulang tidak menghasilkan pesanan ganda.</p>
+<div class="caution"><p><strong>Batasan data:</strong> dokumen kasus tidak menyertakan angka transaksi harian, luas operasi, nilai ambang stok, SLA agen, maupun hasil wawancara. Karena itu, profil dan rancangan kuantitatif di bawah bersifat kualitatif atau usulan awal. Semua parameter operasional harus divalidasi bersama Pak Hendy sebelum implementasi.</p></div>
+</section>
+<section>
+<h2>Bab 1 · Konteks mitra dan proses bisnis saat ini</h2>
+<h3>1.1 Profil organisasi dan skala usaha</h3>
+<p>Warung Kelontong Pak Hendy merupakan usaha ritel kebutuhan harian yang melayani pembelian satuan maupun kebutuhan rumah tangga dalam jumlah lebih besar. Portofolio barang mencakup produk dengan karakter perputaran berbeda: minyak goreng, beras, gula, dan mi instan termasuk kelompok yang perlu dipantau rutin karena permintaan cenderung berulang. Namun, frekuensi penjualan aktual dan jumlah unit per hari belum tersedia. Sebelum sistem menetapkan kapasitas, ambang pemesanan, atau target layanan, tim perlu mengukur transaksi per jam, volume penjualan per SKU, variasi permintaan akhir pekan, dan waktu pemenuhan pemasok.</p>
+<h3>1.2 Proses bisnis eksisting (As-Is)</h3>
+<ol>
+<li><strong>Transaksi kasir.</strong> Kasir menerima barang, menghitung harga menggunakan daftar harga atau ingatan/alat bantu yang tersedia, lalu menuliskan nota kertas atau mencatat penjualan secara manual. Total pembayaran dan rincian barang dapat tersimpan pada nota, tetapi belum tentu menjadi catatan terstruktur yang otomatis mengubah saldo stok.</li>
+<li><strong>Pengecekan stok.</strong> Pemilik atau petugas memeriksa barang di rak dan gudang secara fisik. Catatan stok administratif, jika ada, diperbarui terpisah dari transaksi. Selisih dapat muncul akibat barang terjual, rusak, dipakai internal, atau salah hitung yang tidak dicatat sebagai mutasi.</li>
+<li><strong>Pemesanan ulang.</strong> Saat stok dianggap menipis, pemilik menghubungi satu atau lebih agen grosir melalui WhatsApp. Daftar dan jumlah pesanan disusun manual. Status ketersediaan, konfirmasi harga, estimasi kedatangan, dan penerimaan barang perlu ditelusuri dari percakapan.</li>
+</ol>
+<h3>1.3 Pihak yang terlibat</h3>
+<div class="table-wrap"><table><thead><tr><th>Pihak</th><th>Tanggung jawab saat ini</th><th>Kebutuhan sistem</th></tr></thead><tbody>
+<tr><td>Kasir</td><td>Mencatat barang dan pembayaran pada transaksi pelanggan.</td><td>Alur input ringkas, harga jelas, hasil transaksi langsung diketahui, dan perlindungan dari saldo stok tidak cukup.</td></tr>
+<tr><td>Pengelola/Pemilik (Pak Hendy)</td><td>Mengawasi stok, menentukan barang yang perlu dibeli, merekonsiliasi penerimaan dan penjualan.</td><td>Visibilitas stok dan riwayat mutasi, daftar rekomendasi restock, serta status pesanan pemasok.</td></tr>
+<tr><td>Agen supplier grosir</td><td>Menerima pesanan, mengonfirmasi ketersediaan/harga, dan memenuhi barang.</td><td>Pesanan terstruktur dan dapat ditelusuri; integrasi otomatis bergantung pada kanal/kemampuan teknis yang disepakati.</td></tr>
+</tbody></table></div>
+</section>
+<section>
+<h2>Bab 2 · Persoalan integrasi dan data silo</h2>
+<h3>2.1 Pemetaan silo</h3>
+<div class="table-wrap"><table><thead><tr><th>Domain data</th><th>Lokasi/cara simpan saat ini</th><th>Masalah integrasi</th></tr></thead><tbody>
+<tr><td>Penjualan dan pembayaran</td><td>Nota kertas atau pencatatan kasir.</td><td>Rincian transaksi tidak selalu tersedia bagi pencatatan stok dan laporan penutupan hari.</td></tr>
+<tr><td>Saldo barang</td><td>Kondisi fisik rak/gudang dan catatan terpisah.</td><td>Saldo administratif tertinggal dari realitas setelah transaksi, barang rusak, atau penerimaan.</td></tr>
+<tr><td>Pesanan pemasok</td><td>Chat WhatsApp dan ingatan pemilik.</td><td>Format, status, harga, dan waktu pemenuhan tidak tersentralisasi serta sulit diaudit.</td></tr>
+<tr><td>Data produk</td><td>Daftar harga, label barang, atau pengetahuan petugas.</td><td>Nama, satuan, harga, dan identitas SKU dapat berbeda antarcatatan.</td></tr>
+</tbody></table></div>
+<p>Inti persoalan bukan hanya penggunaan media berbeda, melainkan ketiadaan pemilik data dan mekanisme sinkronisasi yang tegas. Jika penjualan terjadi tanpa mutasi stok tercatat, saldo sistem tidak dapat menjadi dasar keputusan pembelian. Sebaliknya, jika stok hanya diperbarui saat hitung fisik berkala, keputusan restock selalu menggunakan keadaan yang sudah usang.</p>
+<h3>2.2 Konsekuensi bisnis</h3>
+<ul>
+<li><strong>Overselling:</strong> kasir dapat menerima penjualan atas barang yang sesungguhnya sudah habis. Dampaknya berupa pembatalan, penggantian barang, pengalaman pelanggan yang buruk, dan koreksi stok manual.</li>
+<li><strong>Lost sales opportunity:</strong> stok fast-moving yang terlambat dipesan membuat permintaan tidak terpenuhi selama lead time pengadaan. Sistem perlu mempertimbangkan stok tersedia, stok yang sudah dipesan, konsumsi rata-rata, dan waktu pasok, bukan sekadar angka stok fisik.</li>
+<li><strong>Rekonsiliasi akhir hari tidak akurat:</strong> nota yang terlewat, salah hitung, retur, diskon, atau pembayaran yang tidak dikaitkan dengan transaksi menyulitkan pencocokan kas dengan total penjualan.</li>
+<li><strong>Jejak audit terbatas:</strong> perubahan stok tanpa alasan, pelaku, dan waktu yang tercatat sulit ditelusuri ketika terjadi selisih.</li>
+</ul>
+<div class="callout"><p><strong>Implikasi arsitektural:</strong> setiap transaksi yang berhasil harus menghasilkan perubahan stok dan catatan penjualan secara atomik. Pesan pemesanan pemasok tidak perlu menahan kasir; kegagalan kanal pemasok harus dikelola pada alur asinkron dengan status yang dapat dipantau.</p></div>
+</section>
+<section>
+<h2>Bab 3 · Evaluasi gaya integrasi</h2>
+<p>Evaluasi berikut menggunakan empat gaya integrasi Enterprise Integration Patterns. Pemilihan tidak bersifat seragam untuk seluruh sistem. Jalur yang memerlukan keputusan langsung menggunakan request-response; proses yang dapat tertunda menggunakan pesan asinkron.</p>
+<h3>3.1 File Transfer</h3><p>Ekspor dan impor CSV mudah diterapkan, dapat dibuka dengan perangkat umum, serta cocok untuk migrasi awal atau pertukaran batch dengan agen yang belum memiliki API. Namun, file tidak memberi konfirmasi transaksi seketika, rawan versi kolom dan duplikasi impor, serta membutuhkan prosedur rekonsiliasi. File transfer ditolak untuk transaksi kasir realtime karena kasir perlu mengetahui pada saat itu juga apakah penjualan dan pengurangan stok berhasil.</p>
+<h3>3.2 Shared Database</h3><p>Satu basis data bersama tampak sederhana dan memungkinkan komponen membaca data terbaru tanpa mekanisme sinkronisasi terpisah. Konsekuensinya, layanan menjadi terikat pada skema, indeks, hak akses, dan aturan transaksi yang sama. Perubahan skema satu komponen dapat merusak komponen lain; beban konkurensi dapat memicu lock contention; dan batas kepemilikan data menjadi kabur. Pendekatan ini tidak dipilih untuk komunikasi antar-layanan independen. Dalam rancangan ini, hanya Inventory Backend yang memiliki basis data operasionalnya. Outbox adalah tabel internal layanan tersebut, bukan basis data bersama.</p>
+<h3>3.3 Remote Procedure Invocation: REST sinkron</h3><p>POS memanggil <code class="inline-code">POST /api/v1/transaksi</code> pada Inventory Backend. Backend memvalidasi baris barang, harga, dan ketersediaan; menulis transaksi serta mutasi stok; lalu mengembalikan hasil. Respons <code class="inline-code">201 Created</code> menyatakan transaksi berhasil dibuat. Respons <code class="inline-code">409 Conflict</code> menyatakan stok tidak cukup atau terjadi konflik bisnis dan transaksi tidak dikomit.</p><p>Keunggulan utamanya ialah konfirmasi deterministik sebelum kasir menutup transaksi. Trade-off-nya adalah <em>temporal coupling</em>: kedua layanan harus dapat berkomunikasi pada saat permintaan dilakukan. Latensi API juga masuk ke waktu tunggu kasir. Sistem perlu timeout terukur, koneksi yang aman, penanganan retry, serta kunci idempotensi transaksi agar timeout setelah komit tidak menyebabkan penjualan tercatat dua kali. Antarmuka kasir sebaiknya menampilkan status gagal/tertunda secara jelas, bukan menganggap timeout sebagai transaksi sukses.</p>
+<h3>3.4 Asynchronous Messaging: RabbitMQ</h3><p>Setelah stok turun melewati kebijakan ambang, Inventory Backend membuat event dan menaruhnya dalam outbox pada transaksi yang sama. Dispatcher memublikasikan event ke topic exchange RabbitMQ. Supplier Order Gateway mengonsumsi event dan membentuk usulan atau pesanan pemasok sesuai aturan yang telah disetujui pemilik.</p><p>Pesan asinkron mengurangi kopling temporal antara layanan inventaris dan gateway. Jika gateway atau kanal eksternal sedang tidak tersedia, transaksi kasir tetap dapat selesai; pesan menunggu untuk diproses kemudian. Keandalan membutuhkan durable exchange/queue, pesan persistent, publisher confirms, acknowledgement setelah pemrosesan berhasil, retry terbatas, dan dead-letter queue untuk pesan yang terus gagal. Pengiriman dapat terjadi setidaknya sekali, sehingga consumer wajib idempoten. Status pemesanan bersifat <em>eventually consistent</em>: perubahan stok dan status pesanan tidak selalu tampak serentak.</p>
+<h3>3.5 Matriks perbandingan</h3>
+<div class="table-wrap"><table><thead><tr><th>Gaya</th><th>Coupling</th><th>Keandalan</th><th>Kompleksitas</th><th>Latensi</th><th>Use case</th></tr></thead><tbody>
+<tr><td>File Transfer</td><td>Rendah saat pertukaran, tinggi pada format/operasi batch.</td><td>Perlu validasi, arsip, dan rekonsiliasi; tidak realtime.</td><td>Rendah–sedang.</td><td>Tertunda per batch.</td><td>Migrasi awal atau laporan pemasok.</td></tr>
+<tr><td>Shared Database</td><td>Tinggi; skema dan transaksi dipakai bersama.</td><td>ACID terpusat, tetapi gangguan/lock berdampak luas.</td><td>Rendah di awal, tinggi ketika layanan berkembang.</td><td>Rendah untuk baca lokal.</td><td>Tidak dipilih antar-layanan independen.</td></tr>
+<tr><td>REST sinkron</td><td>Temporal coupling dan kontrak API.</td><td>Respons langsung; memerlukan timeout dan idempotensi.</td><td>Sedang.</td><td>Request-response.</td><td>POS → Inventory: validasi serta konfirmasi penjualan.</td></tr>
+<tr><td>RabbitMQ asinkron</td><td>Longgar; produsen dan konsumen terpisah.</td><td>Durable delivery, confirms, ACK, retry, dan DLQ.</td><td>Sedang–tinggi.</td><td>Asinkron; eventual consistency.</td><td>Inventory → Supplier Gateway: restock dan pemrosesan pemasok.</td></tr>
+</tbody></table></div>
+</section>
+<section>
+<h2>Bab 4 · Perancangan arsitektur dan integrasi</h2>
+<h3>4.1 Topologi layanan</h3>
+<ul><li><strong>POS Kasir / Frontend:</strong> UI pencatatan penjualan. Mengirim permintaan REST, menampilkan hasil transaksi, dan menyimpan kunci idempotensi untuk retry aman.</li><li><strong>Inventory Backend Service (Laravel + MySQL):</strong> otoritas katalog, harga, saldo, transaksi, mutasi, kebijakan ambang, dan outbox.</li><li><strong>Supplier Order Gateway / Consumer:</strong> worker yang menerima event, mencegah pemrosesan ganda, menerapkan kebijakan pemesanan, serta mengirim pesanan lewat kanal yang benar-benar tersedia. Integrasi WhatsApp otomatis tidak diasumsikan; opsi awal dapat berupa daftar pesanan yang perlu disetujui pemilik.</li><li><strong>RabbitMQ:</strong> broker untuk event inventaris, antrian pesanan, retry terkontrol, dan dead lettering.</li></ul>
+<h3>4.2 Diagram arsitektur</h3>
+<figure><div class="diagram-wrap"><pre>┌──────────────────────┐    HTTPS / REST sinkron     ┌─────────────────────────┐
+│ POS Kasir / Frontend │ ── POST /api/v1/transaksi ─▶ │ Inventory Backend       │
+│ input & hasil jual   │ ◀─ 201 / 409 / Problem ──── │ Laravel + MySQL         │
+└──────────────────────┘                              │ transaksi + stok +      │
+                                                      │ transactional outbox    │
+                                                      └──────────┬──────────────┘
+                                                                 │ dispatcher
+                                                                 │ publisher confirm
+                                                                 ▼
+                                                   ┌──────────────────────────┐
+                                                   │ RabbitMQ                  │
+                                                   │ inventory.events          │
+                                                   │ Topic Exchange            │
+                                                   └──────────┬───────────────┘
+                                                              │ routing key:
+                                                              │ stock.threshold.reached
+                                                              ▼
+                                                   ┌──────────────────────────┐
+                                                   │ supplier.orders.queue    │
+                                                   │ Supplier Order Gateway   │
+                                                   │ idempotent consumer      │
+                                                   └──────────┬───────────────┘
+                                                   gagal terus │ reject/dead-letter
+                                                              ▼
+                                                   ┌──────────────────────────┐
+                                                   │ inventory.dlx            │
+                                                   │ Dead Letter Exchange     │
+                                                   └──────────┬───────────────┘
+                                                              ▼
+                                                   ┌──────────────────────────┐
+                                                   │ supplier.orders.dlq      │
+                                                   │ inspeksi & replay manual │
+                                                   └──────────────────────────┘</pre></div><figcaption>Gambar 1. Jalur penjualan sinkron terpisah dari jalur pemesanan pemasok asinkron dan dead-letter.</figcaption></figure>
+<p>Konfigurasi broker perlu mendeklarasikan <code class="inline-code">inventory.events</code> sebagai topic exchange durable, binding dari routing key yang disepakati ke <code class="inline-code">supplier.orders.queue</code>, serta dead-letter exchange <code class="inline-code">inventory.dlx</code> yang mengarahkan pesan gagal ke <code class="inline-code">supplier.orders.dlq</code>. DLQ harus dipantau dan memiliki prosedur inspeksi, koreksi, lalu replay terkontrol; DLQ bukan tempat pembuangan yang diabaikan.</p>
+<h3>4.3 Ketahanan dan integritas data</h3>
+<h4>Penguncian pesimistis dan transaksi ACID</h4><p>Untuk setiap SKU yang dijual, backend memulai transaksi basis data, mengunci baris stok memakai <code class="inline-code">lockForUpdate()</code>, memvalidasi bahwa saldo tersedia mencukupi, lalu mencatat transaksi dan mutasi pengurangan. Jika semua validasi berhasil, transaksi dikomit; jika ada kegagalan, seluruh perubahan di-rollback. Penguncian mencegah dua kasir membaca saldo yang sama lalu menjual unit terakhir secara bersamaan. Baris SKU sebaiknya dikunci dalam urutan ID konsisten untuk mengurangi risiko deadlock. Pesan event dan operasi jaringan eksternal tidak boleh dilakukan sambil memegang lock stok.</p>
+<h4>Transactional Outbox</h4><p>Menulis stok ke MySQL lalu langsung menerbitkan pesan ke RabbitMQ memiliki celah: database dapat berhasil commit, sementara broker sedang down. Outbox menyimpan event dalam transaksi database yang sama dengan mutasi stok. Proses dispatcher mengambil baris yang belum terkirim, menerbitkan pesan persistent, menunggu publisher confirm, lalu menandai baris terkirim. Jika proses jatuh setelah publish tetapi sebelum penandaan, pesan mungkin dipublikasikan ulang; desain karena itu tetap memerlukan idempotensi di consumer. Outbox menghindari kehilangan event, tetapi bukan klaim bahwa event hanya terkirim sekali.</p>
+<h4>Idempotent Consumer</h4><p>Setiap event memiliki UUID <code class="inline-code">event_id</code>. Gateway menyimpan ID yang telah diproses dalam tabel inbox/processed-events dengan batas unik. Pencatatan ID dan pembuatan permintaan pesanan internal dilakukan atomik. Jika event yang sama datang kembali, consumer mendeteksi duplikasi dan meng-ACK tanpa membuat pesanan kedua. Untuk efek eksternal yang kanalnya tidak mendukung idempotency key, gateway perlu menyimpan status pengiriman dan melakukan rekonsiliasi sebelum mencoba ulang agar retry tidak menggandakan pesanan.</p>
+<h4>Aturan stok dan pemesanan ulang</h4><p>Ambang pemesanan sebaiknya mempertimbangkan lead time dan permintaan, misalnya titik pemesanan ulang berdasarkan konsumsi selama lead time ditambah safety stock. Angka tersebut harus dihitung dari data penjualan aktual dan variasi pemasok. Event pemicu tidak otomatis berarti pesanan harus langsung dikirim: gateway dapat membuat draft yang disetujui pemilik, terutama pada tahap awal, sampai kebijakan jumlah minimum, substitusi barang, harga, dan pemasok tervalidasi.</p>
+</section>
+<section>
+<h2>Bab 5 · Kontrak API, event, dan roadmap checkpoint 1</h2>
+<h3>5.1 Ringkasan kontrak API (RFC 9457)</h3>
+<p>Endpoint transaksi menggunakan <code class="inline-code">POST /api/v1/transaksi</code> melalui HTTPS. Request memuat identitas idempotensi pada header <code class="inline-code">Idempotency-Key</code>, identitas kasir, waktu transaksi, metode pembayaran, serta item berisi SKU dan kuantitas. Harga dan nama produk otoritatif ditentukan backend; POS tidak boleh menjadi sumber kebenaran harga.</p>
+<div class="table-wrap"><table><thead><tr><th>Status</th><th>Makna</th><th>Tindakan POS</th></tr></thead><tbody>
+<tr><td><code>201 Created</code></td><td>Transaksi tersimpan, saldo stok telah dimutasi.</td><td>Tampilkan nomor transaksi dan ringkasan pembayaran.</td></tr>
+<tr><td><code>400 Bad Request</code></td><td>Struktur request tidak valid.</td><td>Perbaiki input; jangan retry request identik tanpa perubahan.</td></tr>
+<tr><td><code>404 Not Found</code></td><td>SKU tidak dikenal atau tidak aktif.</td><td>Minta kasir memilih barang katalog yang valid.</td></tr>
+<tr><td><code>409 Conflict</code></td><td>Stok tidak cukup, kunci idempotensi digunakan dengan payload berbeda, atau konflik domain.</td><td>Jangan tandai transaksi sukses; muat ulang saldo atau tinjau transaksi.</td></tr>
+<tr><td><code>422 Unprocessable Content</code></td><td>Validasi semantik gagal, misalnya kuantitas tidak positif.</td><td>Tampilkan rincian field yang perlu diperbaiki.</td></tr>
+<tr><td><code>503 Service Unavailable</code></td><td>Backend sementara tidak dapat melayani.</td><td>Berikan status belum terkonfirmasi dan retry aman dengan kunci yang sama.</td></tr>
+</tbody></table></div>
+<p>Galat menggunakan <code class="inline-code">Content-Type: application/problem+json</code> sesuai RFC 9457. Contoh konflik stok:</p>
+<div class="code-wrap"><pre>{
+  "type": "https://warung.example/problems/insufficient-stock",
+  "title": "Stok tidak mencukupi",
+  "status": 409,
+  "detail": "Kuantitas yang diminta melebihi stok tersedia.",
+  "instance": "/api/v1/transaksi",
+  "code": "INSUFFICIENT_STOCK",
+  "items": [
+    { "sku": "SKU-beras-5kg", "requested": 2, "available": 1 }
+  ],
+  "trace_id": "01J8Q2M6R4Y7K9P3T5V1W0XABC"
+}</pre></div>
+<p>Field inti <code class="inline-code">type</code>, <code class="inline-code">title</code>, <code class="inline-code">status</code>, <code class="inline-code">detail</code>, dan <code class="inline-code">instance</code> mengikuti Problem Details. Ekstensi seperti <code class="inline-code">code</code>, <code class="inline-code">items</code>, dan <code class="inline-code">trace_id</code> mendukung penanganan UI serta pelacakan. Informasi internal, query SQL, kredensial, dan stack trace tidak boleh dikirim ke klien.</p>
+<h3>5.2 Spesifikasi event asinkron</h3>
+<p>Nama event: <code class="inline-code">StockThresholdReached</code>. Versi skema dicantumkan agar perubahan kompatibel dapat dikelola. Nilai threshold dan stok adalah snapshot saat event diterbitkan; gateway harus memeriksa kondisi terkini sebelum menyusun pesanan bila event telah tertunda.</p>
+<div class="code-wrap"><pre>{
+  "event_id": "8cb8840a-2159-4b8f-bc67-e39be9df9bc0",
+  "event_type": "StockThresholdReached",
+  "schema_version": "1.0",
+  "occurred_at": "2026-10-20T08:15:30Z",
+  "producer": "inventory-backend",
+  "data": {
+    "sku": "SKU-minyak-1L",
+    "product_name": "Minyak goreng 1 L",
+    "available_quantity": 8,
+    "reorder_threshold": 10,
+    "unit": "botol",
+    "location_id": "TOKO-UTAMA"
+  },
+  "correlation_id": "trx-01J..."
+}</pre></div>
+<p>Routing key yang disepakati: <code class="inline-code">stock.threshold.reached</code>. Pesan tidak memuat rahasia atau data pelanggan. Jumlah rekomendasi pembelian dapat ditambahkan pada versi skema berikutnya setelah aturan stok minimum dan lead time disepakati.</p>
+<h3>5.3 Roadmap dan tanggung jawab Kelompok 67</h3>
+<p>Roadmap checkpoint 1 berikut adalah usulan urutan kerja; tanggal kalender harus disesuaikan dengan jadwal dosen dan mitra. Ketiga anggota meninjau kontrak integrasi bersama agar keputusan antarmuka tidak terpecah.</p>
+<div class="timeline">
+<article><strong>Tahap 1 · Validasi proses dan data</strong><p>Difki Junaedi memimpin wawancara proses kasir dan pemetaan integrasi; Nurul Hidayah mengumpulkan sampel katalog/stok; Bima Azmi Khoerullah mendokumentasikan pemasok dan alur pemesanan. Keluaran: As-Is tervalidasi, daftar SKU contoh, transaksi harian dan variasi permintaan yang diukur, serta daftar asumsi yang tersisa.</p></article>
+<article><strong>Tahap 2 · Kontrak dan rancangan</strong><p>Kelompok menyepakati payload transaksi, status API, Problem Details, skema event, routing key, dan kebijakan retry. Keluaran: diagram komponen final, definisi data, threat/risiko operasional dasar, serta kriteria penerimaan checkpoint.</p></article>
+<article><strong>Tahap 3 · Prototipe integrasi</strong><p>Implementasikan jalur REST sampai transaksi mengurangi stok secara atomik; lanjutkan outbox, RabbitMQ, consumer idempoten, dan DLQ. Jalankan uji konkurensi stok, replay event duplikat, serta simulasi broker tidak tersedia.</p></article>
+<article><strong>Tahap 4 · Demo dan evaluasi checkpoint 1</strong><p>Demonstrasikan penjualan berhasil (<code>201</code>), stok tidak cukup (<code>409</code>), event ambang stok yang diproses satu kali, dan pesan gagal yang masuk DLQ. Catat hasil, batasan, keputusan mitra, serta pekerjaan lanjutan.</p></article>
+</div>
+<div class="table-wrap"><table><thead><tr><th>Anggota</th><th>Fokus koordinasi</th><th>Keluaran utama</th></tr></thead><tbody>
+<tr><td>Difki Junaedi</td><td>Proses kasir, API transaksi, dan sinkronisasi kebutuhan UI.</td><td>Alur transaksi, kontrak request/response, skenario validasi.</td></tr>
+<tr><td>Nurul Hidayah</td><td>Katalog, saldo, mutasi, aturan ambang, dan integritas data.</td><td>Model data inventaris, aturan stok, pengujian ACID/konkurensi.</td></tr>
+<tr><td>Bima Azmi Khoerullah</td><td>RabbitMQ, gateway pemasok, retry, idempotensi, dan DLQ.</td><td>Skema event, konfigurasi alur pesan, prosedur pemulihan.</td></tr>
+</tbody></table></div>
+<p class="kicker">Pembagian di atas membagi fokus, bukan membatasi kepemilikan. Setiap anggota perlu melakukan review silang terhadap kontrak dan skenario uji.</p>
+</section>
+<section>
+<h2>Kesimpulan</h2>
+<p>Arsitektur yang diusulkan memisahkan konfirmasi penjualan dari otomasi restock sesuai kebutuhan waktunya. POS menggunakan REST sinkron agar transaksi memperoleh keputusan langsung dari sumber stok yang otoritatif. Inventory Backend mengelola komit transaksi dan outbox secara atomik, sementara RabbitMQ menyampaikan event ke Supplier Order Gateway tanpa membuat kasir bergantung pada ketersediaan kanal pemasok. Penguncian pesimistis, idempotensi, publisher confirms, retry, dan DLQ membentuk lapisan perlindungan terhadap race condition, kehilangan pesan, serta pengiriman ulang.</p>
+<p>Sebelum implementasi produksi, Kelompok 67 perlu mengukur pola penjualan nyata, mengonfirmasi alur pembayaran dan retur, menentukan ambang stok per SKU, serta menyepakati apakah pesanan pemasok otomatis dikirim atau terlebih dahulu memerlukan persetujuan Pak Hendy. Keputusan tersebut mengubah kebijakan bisnis, bukan sekadar konfigurasi teknis.</p>
+</section>
+</main>
+<footer><p><strong>Catatan akademik:</strong> analisis ini merupakan rancangan konseptual berdasarkan studi kasus yang diberikan. Nilai operasional yang belum tersedia tidak direkayasa dan perlu dikonfirmasi saat pengumpulan kebutuhan.</p><p>Kelompok 67 · STMIK Bandung · Integrasi Sistem dan Komputasi Awan · Kurikulum 2025</p></footer>
+</div>

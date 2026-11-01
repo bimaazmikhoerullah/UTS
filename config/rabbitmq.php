@@ -7,6 +7,6 @@ return [
     'password' => env('RABBITMQ_PASSWORD', 'rahasia'),
     'vhost' => env('RABBITMQ_VHOST', '/'),
 
-    // Topic exchange tempat semua event Toko Berkah Jaya diterbitkan
+    // Topic exchange tempat semua event Warung Kelontong Pak Hendy diterbitkan
     'exchange' => 'toko.events',
 ];

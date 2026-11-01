@@ -21,6 +21,13 @@ class FormatJsonResponse
             $response->setEncodingOptions(
                 $response->getEncodingOptions() | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
             );
+
+            if ($response->getStatusCode() >= 400) {
+                $data = $response->getData(true);
+                if (is_array($data) && isset($data['type'], $data['title'])) {
+                    $response->headers->set('Content-Type', 'application/problem+json');
+                }
+            }
         }
 
         return $response;

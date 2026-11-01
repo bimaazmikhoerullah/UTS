@@ -28,7 +28,10 @@ class ProdukController extends Controller
             'name'  => 'required|string',
             'harga' => 'required|integer|min:0',
             'stock' => 'required|integer|min:0',
+            'minimum_stock' => 'sometimes|integer|min:0',
         ]);
+
+        $validated['minimum_stock'] = $validated['minimum_stock'] ?? 5;
 
         $product = Product::create($validated);
 
@@ -47,7 +50,7 @@ class ProdukController extends Controller
                 'status'   => Response::HTTP_NOT_FOUND,
                 'detail'   => "Product with SKU {$sku} not found.",
                 'instance' => request()->fullUrl(),
-            ], Response::HTTP_NOT_FOUND);
+            ], Response::HTTP_NOT_FOUND, ['Content-Type' => 'application/problem+json']);
         }
 
         return response()->json($product);
@@ -64,7 +67,7 @@ class ProdukController extends Controller
                 'status'   => Response::HTTP_NOT_FOUND,
                 'detail'   => "Product with SKU {$sku} not found.",
                 'instance' => request()->fullUrl(),
-            ], Response::HTTP_NOT_FOUND);
+            ], Response::HTTP_NOT_FOUND, ['Content-Type' => 'application/problem+json']);
         }
 
         $validated = $request->validate([
@@ -83,7 +86,7 @@ class ProdukController extends Controller
                 'status'   => Response::HTTP_UNPROCESSABLE_ENTITY,
                 'detail'   => 'Salah satu dari field "adjustment", "quantity", atau "perubahan" wajib diisi.',
                 'instance' => request()->fullUrl(),
-            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+            ], Response::HTTP_UNPROCESSABLE_ENTITY, ['Content-Type' => 'application/problem+json']);
         }
         $alasan    = $validated['alasan'] ?? ($perubahan < 0 ? 'penjualan' : 'restok');
 
@@ -137,7 +140,7 @@ class ProdukController extends Controller
                     'status'   => Response::HTTP_CONFLICT,
                     'detail'   => 'Stock adjustment would result in negative stock.',
                     'instance' => request()->fullUrl(),
-                ], Response::HTTP_CONFLICT);
+                ], Response::HTTP_CONFLICT, ['Content-Type' => 'application/problem+json']);
             }
             throw $e;
         }

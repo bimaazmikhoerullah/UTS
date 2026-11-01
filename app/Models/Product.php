@@ -14,10 +14,12 @@ class Product extends Model
         'name',
         'harga',
         'stock',
+        'minimum_stock',
     ];
 
     protected $casts = [
         'stock' => 'integer',
         'harga' => 'integer',
+        'minimum_stock' => 'integer',
     ];
 }

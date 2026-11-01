@@ -1,45 +1,54 @@
-openapi: 3.0.0
+openapi: 3.1.0
 info:
-  title: Layanan Katalog dan Stok Toko Berkah Jaya
+  title: Layanan Katalog dan Stok Warung Kelontong Pak Hendy
   version: 1.0.0
-  description: API untuk mengelola katalog produk dan stok Toko Berkah Jaya
+  description: API RESTful untuk mengelola katalog produk dan penyesuaian stok Warung Kelontong Pak Hendy secara sinkron, dilengkapi pencatatan outbox untuk penerbitan event asinkron ke RabbitMQ.
   contact:
-    name: Kelompok Proyek Akhir
+    name: Kelompok Proyek Akhir (Difki Junaedi, Bima Azmi Khoerullah, Nurul Hidayah)
     email: kelompok@example.com
+    url: https://github.com/asukarew/UTS
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - url: http://localhost:8090/api/v1
+    description: Server lokal menggunakan Laravel Sail
+  - url: http://localhost:8000/api/v1
+    description: Server lokal tanpa container (php artisan serve)
 tags:
   - name: produk
-    description: Operasi terkait katalog produk dan stok
-servers:
-  - url: http://localhost:8000/api/v1
-    description: Local server
+    description: Operasi pengelolaan katalog produk dan penyesuaian stok
+  - name: pos
+    description: Operasi transaksi penjualan kasir Point of Sale
+  - name: persediaan
+    description: Pemantauan persediaan stok dan pemesanan ulang ke supplier
 paths:
   /produk:
     get:
-      summary: Daftar produk
-      description: Mengembalikan daftar seluruh produk yang terdaftar di katalog.
+      summary: Daftar seluruh produk
+      description: Mengembalikan daftar seluruh produk yang terdaftar di katalog Warung Kelontong Pak Hendy.
       tags:
         - produk
       operationId: listProduk
       responses:
         '200':
-          description: Successful response with array of products
+          description: Berhasil mengambil daftar produk
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Product'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
     post:
-      summary: Tambah produk
-      description: Menambahkan produk baru ke katalog dengan SKU unik, nama, harga, dan stok awal.
+      summary: Tambah produk baru
+      description: Menambahkan produk baru ke dalam katalog dengan SKU unik, nama, harga satuan (rupiah), dan stok awal.
       tags:
         - produk
       operationId: createProduk
       requestBody:
+        description: Data produk baru yang akan didaftarkan
         required: true
         content:
           application/json:
@@ -47,64 +56,67 @@ paths:
               $ref: '#/components/schemas/ProductInput'
       responses:
         '201':
-          description: Product created
+          description: Produk baru berhasil dibuat
           headers:
             Location:
-              description: URL of the newly created product
+              description: URI lokasi produk yang baru saja dibuat
               schema:
                 type: string
                 format: uri
+                example: http://localhost:8090/api/v1/produk/MYK-001
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
         '400':
           $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
         '422':
           $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /produk/{sku}:
+    parameters:
+      - name: sku
+        in: path
+        required: true
+        description: Kode Stock Keeping Unit (SKU) unik dari produk
+        schema:
+          type: string
+          example: MYK-001
     get:
-      summary: Detail produk
-      description: Mengambil detail satu produk berdasarkan SKU.
+      summary: Detail produk berdasarkan SKU
+      description: Mengambil detail data produk spesifik dari katalog berdasarkan kode SKU.
       tags:
         - produk
       operationId: getProdukBySKU
-      parameters:
-        - name: sku
-          in: path
-          required: true
-          schema:
-            type: string
       responses:
         '200':
-          description: Successful response with product details
+          description: Berhasil menemukan dan mengembalikan detail produk
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Product'
         '404':
-          description: Product not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /produk/{sku}/penyesuaian-stok:
+    parameters:
+      - name: sku
+        in: path
+        required: true
+        description: Kode SKU produk yang stoknya akan disesuaikan
+        schema:
+          type: string
+          example: MYK-001
     post:
-      summary: Sesuaikan stok
-      description: Menyesuaikan stok produk (positif menambah, negatif mengurangi). Stok tidak boleh jadi negatif.
+      summary: Sesuaikan stok produk
+      description: Menyesuaikan jumlah stok produk secara sinkron (nilai positif untuk penambahan stok/restok, nilai negatif untuk pengurangan/penjualan). Menggunakan transaksi database dan outbox pattern untuk memancarkan event StokDisesuaikan ke RabbitMQ. Mengembalikan status 409 jika pengurangan mengakibatkan stok menjadi negatif.
       tags:
         - produk
       operationId: adjustStock
-      parameters:
-        - name: sku
-          in: path
-          required: true
-          schema:
-            type: string
       requestBody:
+        description: Rincian nilai penyesuaian stok dan alasan perubahan
         required: true
         content:
           application/json:
@@ -112,109 +124,460 @@ paths:
               $ref: '#/components/schemas/StockAdjustment'
       responses:
         '200':
-          description: Stok berhasil disesuaikan
+          description: Stok berhasil disesuaikan dan event berhasil dicatat di outbox
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Product'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '404':
-          description: Product not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: '#/components/responses/NotFound'
         '409':
-          description: Conflict (e.g., stock would go negative)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /pos/transaksi:
+    post:
+      summary: Proses transaksi penjualan (POS)
+      description: Memproses transaksi penjualan melalui POS dengan mengurangi stok produk yang dibeli.
+      tags:
+        - pos
+      operationId: processPosTransaction
+      requestBody:
+        description: Rincian transaksi penjualan
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PosTransaction'
+      responses:
+        '200':
+          description: Transaksi berhasil diproses
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PosTransactionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /persediaan/reorder:
+    get:
+      summary: Daftar riwayat pemesanan ulang ke supplier
+      description: Mengembalikan daftar status order restock ke supplier.
+      tags:
+        - persediaan
+      operationId: listReorders
+      responses:
+        '200':
+          description: Daftar order status berhasil dimuat
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - total
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/OrderStatus'
+                  total:
+                    type: integer
+                    example: 1
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      summary: Buat pemesanan ulang (reorder) ke supplier
+      description: Membuat order pemesanan ulang produk ke supplier secara manual atau terpicu ambang stok.
+      tags:
+        - persediaan
+      operationId: createReorder
+      requestBody:
+        description: Rincian pemesanan ulang
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - sku
+                - quantity
+              properties:
+                sku:
+                  type: string
+                  example: "MYK-001"
+                quantity:
+                  type: integer
+                  example: 10
+                supplier:
+                  type: string
+                  example: "PT Sumber Jaya"
+                notes:
+                  type: string
+                  example: "Segera kirim"
+      responses:
+        '201':
+          description: Pemesanan ulang berhasil dibuat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderStatus'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 components:
   schemas:
     Product:
       type: object
+      description: Model data produk Warung Kelontong Pak Hendy
       required:
+        - id
         - sku
         - name
+        - harga
         - stock
       properties:
+        id:
+          type: integer
+          description: ID unik produk pada database
+          example: 1
         sku:
           type: string
-          description: Stock Keeping Unit, unique identifier for the product
+          description: Stock Keeping Unit unik sebagai identitas produk
+          example: "MYK-001"
         name:
           type: string
           description: Nama produk
+          example: "Minyak Goreng Sawit 1L"
+        harga:
+          type: integer
+          minimum: 0
+          description: Harga satuan produk dalam satuan mata uang Rupiah
+          example: 14000
         stock:
           type: integer
-          description: Jumlah stok saat ini
           minimum: 0
+          description: Jumlah stok produk saat ini
+          example: 20
+        minimum_stock:
+          type: integer
+          minimum: 0
+          description: Ambang batas stok minimum untuk memicu restok
+          example: 5
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp waktu produk didaftarkan
+          example: "2026-10-24T08:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp waktu data produk terakhir diubah
+          example: "2026-10-24T08:30:00Z"
     ProductInput:
       type: object
+      description: Payload permintaan untuk membuat produk baru
       required:
         - sku
         - name
+        - harga
         - stock
       properties:
         sku:
           type: string
-          description: Stock Keeping Unit, unique identifier for the product
+          description: Stock Keeping Unit unik untuk produk baru
+          example: "MYK-001"
         name:
           type: string
           description: Nama produk
+          example: "Minyak Goreng Sawit 1L"
+        harga:
+          type: integer
+          minimum: 0
+          description: Harga satuan produk dalam Rupiah
+          example: 14000
         stock:
           type: integer
-          description: Jumlah stok awal
           minimum: 0
+          description: Jumlah stok awal (harus non-negatif)
+          example: 20
+        minimum_stock:
+          type: integer
+          minimum: 0
+          description: Ambang batas stok minimum untuk memicu restok (default 5)
+          example: 5
     StockAdjustment:
       type: object
-      required:
-        - quantity
+      description: Payload permintaan penyesuaian stok produk
       properties:
+        perubahan:
+          type: integer
+          description: Selisih perubahan stok (nilai negatif untuk penjualan/pengurangan, nilai positif untuk restok/penambahan)
+          example: -3
         quantity:
           type: integer
-          description: Jumlah penyesuaian stok (positif untuk penambahan, negatif untuk pengurangan)
-    ErrorResponse:
+          description: Alias alternatif dari field perubahan
+          example: -3
+        adjustment:
+          type: integer
+          description: Alias alternatif kedua dari field perubahan
+          example: -3
+        alasan:
+          type: string
+          description: Penyebab atau alasan penyesuaian stok (digunakan sebagai routing key event stok.{alasan})
+          example: "penjualan"
+          enum:
+            - penjualan
+            - restok
+            - koreksi
+            - retur
+            - rusak
+    PosTransaction:
       type: object
+      description: Payload transaksi penjualan POS
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PosTransactionItem'
+    PosTransactionItem:
+      type: object
+      required:
+        - sku
+        - quantity
+      properties:
+        sku:
+          type: string
+          example: "MYK-001"
+        quantity:
+          type: integer
+          minimum: 1
+          example: 2
+    PosTransactionResponse:
+      type: object
+      properties:
+        transaction_id:
+          type: string
+          format: uuid
+        total_price:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+    ProblemDetails:
+      type: object
+      description: Objek representasi galat standar Problem Details sesuai RFC 7807 dan RFC 9457
+      required:
+        - type
+        - title
+        - status
       properties:
         type:
           type: string
-          description: URI yang mengidentifikasi jenis masalah
+          format: uri-reference
+          description: URI referensi yang mengidentifikasi jenis galat/masalah (default 'about:blank')
+          example: "about:blank"
         title:
           type: string
-          description: Ringkasan singkat tentang masalah
+          description: Ringkasan singkat mengenai kategori galat HTTP
+          example: "Product Not Found"
         status:
           type: integer
-          description: Kode status HTTP yang dihasilkan oleh server
+          description: Kode status HTTP yang dihasilkan server
+          example: 404
         detail:
           type: string
-          description: Penjelasan spesifik tentang masalah
+          description: Penjelasan kontekstual spesifik mengenai galat yang terjadi pada permintaan ini
+          example: "Product with SKU MYK-001 not found."
         instance:
           type: string
-          description: URI yang mengidentifikasi kemunculan spesifik dari masalah
+          format: uri-reference
+          description: URI yang mengidentifikasi lokasi spesifik terjadinya galat
+          example: "http://localhost:8090/api/v1/produk/MYK-001"
+        invalid_params:
+          type: array
+          description: Rincian parameter atau field input yang tidak memenuhi validasi (khusus status 422)
+          items:
+            $ref: '#/components/schemas/InvalidParam'
+    InvalidParam:
+      type: object
+      description: Rincian parameter yang gagal divalidasi
+      required:
+        - name
+        - reason
+      properties:
+        name:
+          type: string
+          description: Nama parameter atau atribut request yang gagal divalidasi
+          example: "harga"
+        reason:
+          type: string
+          description: Alasan mengapa nilai parameter tersebut ditolak
+          example: "The harga field must be an integer."
+
+    OrderStatus:
+      type: object
+      description: Model status pemesanan ulang ke supplier
+      required:
+        - id
+        - order_id
+        - sku
+        - quantity
+        - status
+      properties:
+        id:
+          type: integer
+          description: ID unik record order status
+          example: 1
+        order_id:
+          type: string
+          format: uuid
+          description: UUID unik untuk mengidentifikasi pesanan
+          example: "a1b2c3d4-0000-0000-0000-000000000000"
+        sku:
+          type: string
+          description: SKU produk yang akan dipesan ulang
+          example: "MYK-001"
+        quantity:
+          type: integer
+          description: Jumlah pesanan
+          example: 10
+        supplier:
+          type: string
+          description: Supplier tujuan pemesanan
+          example: "PT Sumber Jaya"
+        status:
+          type: string
+          enum:
+            - pending
+            - sent
+            - confirmed
+            - cancelled
+            - received
+          description: Status saat ini pesanan
+          example: "pending"
+        notes:
+          type: string
+          description: Catatan tambahan
+          example: "Tunda pengiriman"
+        sent_at:
+          type: string
+          format: date-time
+          description: Waktu pesanan dikirim ke supplier
+          example: "2026-10-24T08:30:00Z"
+        confirmed_at:
+          type: string
+          format: date-time
+          description: Waktu pesanan dikonfirmasi supplier
+          example: "2026-10-24T09:00:00Z"
+        received_at:
+          type: string
+          format: date-time
+          description: Waktu pesanan diterima
+          example: "2026-10-25T10:00:00Z"
+        created_at:
+          type: string
+          format: date-time
+          description: Waktu record dibuat
+          example: "2026-10-24T08:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: Waktu record terakhir diubah
+          example: "2026-10-24T08:30:00Z"
   responses:
-    Unauthorized:
-      description: Token akses tidak valid atau tidak disertakan
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    Forbidden:
-      description: Akses ditolak karena tidak memiliki izin yang cukup
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
     BadRequest:
-      description: Permintaan tidak dapat dipahami oleh server karena sintaks yang tidak valid
+      description: Format permintaan tidak valid atau sintaks JSON rusak (RFC 7807)
       content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+          example:
+            type: "about:blank"
+            title: "Bad Request"
+            status: 400
+            detail: "Sintaks JSON pada request body tidak valid."
+            instance: "http://localhost:8090/api/v1/produk"
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: '#/components/schemas/ProblemDetails'
+    NotFound:
+      description: Data produk atau rute yang diminta tidak ditemukan (RFC 7807)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+          example:
+            type: "about:blank"
+            title: "Product Not Found"
+            status: 404
+            detail: "Product with SKU MYK-999 not found."
+            instance: "http://localhost:8090/api/v1/produk/MYK-999"
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    Conflict:
+      description: Terjadi konflik status bisnis, misalnya pengurangan stok melebihi stok yang tersedia (RFC 7807)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+          example:
+            type: "about:blank"
+            title: "Conflict"
+            status: 409
+            detail: "Stock adjustment would result in negative stock."
+            instance: "http://localhost:8090/api/v1/produk/MYK-001/penyesuaian-stok"
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
     ValidationError:
-      description: Kesalahan validasi input
+      description: Validasi parameter atau payload gagal (RFC 7807)
       content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+          example:
+            type: "about:blank"
+            title: "Validation Error"
+            status: 422
+            detail: "The sku field is required."
+            instance: "http://localhost:8090/api/v1/produk"
+            invalid_params:
+              - name: "sku"
+                reason: "The sku field is required."
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: '#/components/schemas/ProblemDetails'
+    InternalServerError:
+      description: Terjadi galat internal yang tidak terduga pada server (RFC 7807)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+          example:
+            type: "about:blank"
+            title: "Internal Server Error"
+            status: 500
+            detail: "Terjadi kesalahan internal pada pemrosesan server."
+            instance: "http://localhost:8090/api/v1/produk"
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'

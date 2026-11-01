@@ -5,12 +5,13 @@
 /public/fonts-manifest.dev.json
 /public/hot
 /public/storage
+/storage/*.key
+/storage/pail
 /resources/js/actions
 /resources/js/routes
 /resources/js/wayfinder
-/storage/*.key
-/storage/pail
 /vendor
+.DS_Store
 .env
 .env.backup
 .env.production
@@ -29,6 +30,7 @@ yarn-error.log
 /.agents
 /.amp
 /.claude
+/.codex
 /.cursor
 /.factory
 /.grok
@@ -41,4 +43,3 @@ yarn-error.log
 /boost.json
 /opencode.json
 /opencode.jsonc
-fakehome/
