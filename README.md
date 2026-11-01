@@ -13,7 +13,6 @@
 
 **Mata Kuliah:** Integrasi Sistem dan Komputasi Awan (25IF1504)  
 **Program Studi:** S1 Teknik Informatika — STMIK Bandung  
-**Kelompok 67:**
 * **Difki Junaedi** *(Infra, Docker Compose, Outbox Publisher)*
 * **Nurul Hidayah** *(REST API, RFC 9457 Error Handling, Feature Testing)*
 * **Bima Azmi Khoerullah** *(RabbitMQ Consumer, DLQ Handler, Idempotency)*
